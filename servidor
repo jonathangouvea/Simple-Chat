@@ -1,0 +1,50 @@
+#!/usr/bin/python3
+
+# seu código aqui
+import socket
+
+def recvline():
+	dados = ''		
+	while True:
+		leitura = conexao.recv(1)
+		dados += leitura.decode('utf-8')
+		if leitura == b'\n' or leitura == b'':
+			return dados
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(('', 7000))
+s.listen(5)
+conexao, endereco = s.accept()
+
+apelido = ''
+
+while True:
+	lido = recvline()
+
+	if lido == '':
+		conexao.close()
+		break
+
+	if lido[0:6] == "/nick ":
+		nick = lido[6::]
+		pode = 1
+		
+		for n in nick:
+			if n == ' ' or n == ':':
+				pode = 0
+		if pode == 0:
+			conexao.send(b"/error\n")
+		else:
+			if apelido == '':
+				conexao.send(('/joined ' + nick[:-1] + '\n').encode('utf-8'))
+			else:
+				conexao.send(('/renamed ' + apelido + ' ' + nick[:-1] + '\n').encode('utf-8'))
+			apelido = nick[:-1]
+	
+	elif apelido == '':
+		conexao.send('/error\n'.encode('utf-8'))
+		
+	else:
+		conexao.send( (apelido + ': ' + lido).encode('utf-8') )
+	
